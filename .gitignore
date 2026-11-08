@@ -1,3 +1,4 @@
 pilapp/target
+*.csv
 .direnv
 .envrc
