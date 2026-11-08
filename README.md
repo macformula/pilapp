@@ -17,3 +17,4 @@ Right now, the PIL is a pretty barebones gpio blinker. Eventually, we want to:
     * If jitter is high, we can move from gpiocdev to bit-banging the registers
     * If that still doesn't work, the second controller to actually drive gpio will be useful. Bonuses for a second controller include onboard CAN control instead of the spi-to-CAN that we will use for the pi
  * Flash the firmware automatically
+ * Present test data usefully
