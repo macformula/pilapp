@@ -35,4 +35,4 @@ with open("default.bin", "rb") as file:
     plt.savefig("out.jpg", dpi=300, bbox_inches="tight")
     plt.show()
 with open("out.csv", "w") as file:
-    file.write("\n".join(str(x) for x in jitter))
+    file.write(",".join(str(x) for x in jitter))
