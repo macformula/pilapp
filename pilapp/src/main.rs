@@ -59,7 +59,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut high = false;
     let mut test_1000 = MainLoop {
         period: Duration::from_millis(10),
-        spintime: SpinTime::Percent(80.0),
+        spintime: SpinTime::Percent(100.0),
         // closure!
         task: move || -> Result<(), Box<dyn std::error::Error>> {
             high = !high;
@@ -68,7 +68,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         },
     };
 
-    let mut late = test_1000.run(1000)?;
+    let mut late = test_1000.run(10000)?;
     late.sort_unstable();
     let n = late.len();
     println!("Median: {}", late[n / 2]);

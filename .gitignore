@@ -1,4 +1,7 @@
 pilapp/target
 *.csv
+*.bin
+*.jpg
+*.txt
 .direnv
 .envrc
