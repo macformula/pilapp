@@ -5,6 +5,8 @@ use std::error::Error;
 use std::thread::sleep;
 use std::time::{Duration, Instant};
 
+use libc::{MCL_CURRENT, MCL_FUTURE, mlockall};
+
 enum SpinTime {
     Percent(f64),
     Absolute(u64),
@@ -54,6 +56,10 @@ where
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
+    // de-lazify memory
+    if unsafe { mlockall(MCL_CURRENT | MCL_FUTURE) != 0 } {
+        panic!("Could not lock memory")
+    }
     let runs = std::env::args().nth(1).expect("no runs given");
     let runs = runs.parse::<usize>().unwrap();
     let period = std::env::args().nth(2).expect("no period given");
@@ -61,6 +67,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut pin = Gpio::new()?.get(17)?.into_output();
     // just to allow for logging before switching, remove from final app
     pin.set_low();
+    // https://stackoverflow.com/questions/79719857/how-do-i-avoid-memory-being-swapped-in-rust
     let mut on: bool = true;
     let mut test_1000 = MainLoop {
         period: Duration::from_millis(period),
