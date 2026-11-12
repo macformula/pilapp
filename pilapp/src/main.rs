@@ -1,7 +1,6 @@
-use gpiocdev::{
-    Request,
-    line::{Bias, Value},
-};
+use rppal::gpio::Gpio;
+use rppal::system::DeviceInfo;
+
 use std::error::Error;
 use std::thread::sleep;
 use std::time::{Duration, Instant};
@@ -51,19 +50,24 @@ where
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     // form request
-    let req = Request::builder()
-        .on_chip("/dev/gpiochip0")
-        .with_line(17)
-        .as_output(Value::Inactive)
-        .request()?;
-    let mut high = false;
+    // let req = Request::builder()
+    //     .on_chip("/dev/gpiochip0")
+    //     .with_line(17)
+    //     .as_output(Value::Inactive)
+    //     .request()?;
+    // let mut high = false;
+    let mut pin = Gpio::new()?.get(17)?.into_output();
+    let mut on: bool = true;
     let mut test_1000 = MainLoop {
         period: Duration::from_millis(10),
         spintime: SpinTime::Percent(100.0),
         // closure!
         task: move || -> Result<(), Box<dyn std::error::Error>> {
-            high = !high;
-            req.set_value(17, if high { Value::Active } else { Value::Inactive })?;
+            match on {
+                true => pin.set_high(),
+                false => pin.set_low(),
+            }
+            on = !on;
             Ok(())
         },
     };
