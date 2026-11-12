@@ -30,15 +30,20 @@ where
     fn run(&mut self, runs: usize) -> Result<Vec<u128>, Box<dyn Error>> {
         let spin = self.spintime.resolve(self.period);
         let mut next = Instant::now() + self.period;
+        // simply doing ::with_capacity wasn't good enough and still created regular spikes
+        // due to minor page faults. vec! doesn't work either, and seems to be lazy.
+        // .resize seems worth trying.
         let mut late: Vec<u128> = Vec::with_capacity(runs);
-        for _ in 0..runs {
+        late.resize(runs, 0);
+        for i in 0..runs {
             // sleep
             sleep(next.duration_since(Instant::now() + spin));
             // spin
             while Instant::now() < next {}
             // this is just for profiling timing
             let now = Instant::now().duration_since(next).as_nanos();
-            late.push(now);
+            late[i] = now;
+
             // execute the task, access closure and call contents
             (self.task)()?;
             // don't drift over time.
@@ -49,17 +54,16 @@ where
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    // form request
-    // let req = Request::builder()
-    //     .on_chip("/dev/gpiochip0")
-    //     .with_line(17)
-    //     .as_output(Value::Inactive)
-    //     .request()?;
-    // let mut high = false;
+    let runs = std::env::args().nth(1).expect("no runs given");
+    let runs = runs.parse::<usize>().unwrap();
+    let period = std::env::args().nth(2).expect("no period given");
+    let period = period.parse::<u64>().unwrap();
     let mut pin = Gpio::new()?.get(17)?.into_output();
+    // just to allow for logging before switching, remove from final app
+    pin.set_low();
     let mut on: bool = true;
     let mut test_1000 = MainLoop {
-        period: Duration::from_millis(10),
+        period: Duration::from_millis(period),
         spintime: SpinTime::Percent(100.0),
         // closure!
         task: move || -> Result<(), Box<dyn std::error::Error>> {
@@ -72,7 +76,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         },
     };
 
-    let mut late = test_1000.run(10000)?;
+    let mut late = test_1000.run(runs)?;
     late.sort_unstable();
     let n = late.len();
     println!("Median: {}", late[n / 2]);

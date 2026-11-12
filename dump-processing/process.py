@@ -41,7 +41,17 @@ with open("default.bin", "rb") as file:
     print("Drift (linear fit slope): %.3f ppm" % slope_us_per_s)
     print("Detrended jitter: min %.1f us, max %.1f us, std %.2f us" % (
         detrended_us.min(), detrended_us.max(), detrended_us.std()))
+
+    # since the spikes are so significant and I take 20s captures this is fine
+    spikes = []
+    for i in range(0, len(jitter_us)):
+        if abs(detrended_us[i]) > detrended_us.std()*2:
+            spikes.append(i)
+    spike_jitter = []
+    for i in range(1, len(spikes)):
+        spike_jitter.append(spikes[i]-spikes[i-1])
     
+    print("spikes", spike_jitter)
     plt.plot(switch_times, detrended_us)
     plt.xlabel("time since start of capture (s)")
     plt.ylabel("jitter after linear fit removed (µs)")
@@ -49,6 +59,8 @@ with open("default.bin", "rb") as file:
     plt.plot(switch_times, detrended_us)
     plt.savefig("out.jpg", dpi=800, bbox_inches="tight")
     plt.show()
+
+
 
 with open("out.csv", "w") as file:
     file.write("time_s,jitter_s,detrended_jitter_s\n")
