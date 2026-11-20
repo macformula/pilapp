@@ -1,30 +1,23 @@
+// cargo build --release && sudo sigrok-cli -d fx2lafw --config samplerate=16m --samples 24M --channels D0 | cargo run
 use std::fs::File;
-use std::io::{self, BufRead, BufReader, BufWriter, Write};
+use std::io::{self, BufWriter, Read, Write};
 use std::sync::mpsc::sync_channel;
 use std::thread;
 
+const CHUNK: usize = 256 * 1024;
 fn main() -> io::Result<()> {
     let (tx, rx) = sync_channel::<Vec<u8>>(1024);
 
     let reader_thread = thread::spawn(move || {
-        let stdin = io::stdin();
-        let mut reader = BufReader::with_capacity(1 << 20, stdin.lock());
-
-        // skip 2 bad lines
-        let mut dump = Vec::new();
-        for _ in 0..2 {
-            dump.clear();
-            if reader.read_until(b'\n', &mut dump).unwrap() == 0 {
-                return;
-            }
-        }
-
+        let mut stdin = io::stdin().lock();
         loop {
-            let mut line = Vec::with_capacity(96);
-            if reader.read_until(b'\n', &mut line).unwrap() == 0 {
+            let mut chunk = vec![0u8; CHUNK];
+            let n = stdin.read(&mut chunk).unwrap();
+            if n == 0 {
                 break;
             }
-            if tx.send(line).is_err() {
+            chunk.truncate(n);
+            if tx.send(chunk).is_err() {
                 break;
             }
         }
@@ -33,20 +26,27 @@ fn main() -> io::Result<()> {
     let mut switches: Vec<u64> = Vec::new();
     let mut prev: u8 = 0;
     let mut since: u64 = 0;
+    let mut total: u64 = 0;
+    let mut first = true;
 
     //this pattern is awesome
-    for line in rx {
-        for group in 0..8 {
-            let base = 3 + group * 9;
-            for j in 0..8 {
-                let bit = line[base + j] - b'0';
-                if bit != prev {
-                    switches.push(since);
-                    since = 0;
-                }
-                since += 1;
-                prev = bit;
+    for chunk in rx {
+        for &b in &chunk {
+            if b & 0xFE != 0xFE {
+                continue;
             }
+            let bit = b & 1;
+            if first {
+                prev = b; 
+                first = false;
+            }
+            if b != prev {
+                switches.push(since);
+                // println!("Good");
+                since = 0;
+            }
+            since += 1;
+            prev = b;
         }
     }
 
