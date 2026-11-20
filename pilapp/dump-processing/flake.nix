@@ -24,6 +24,8 @@
             packages = [
               py
               pkgs.xxd #view the binary all matrix-style
+	      pkgs.sigrok-cli
+	      pkgs.usbutils
             ];
           };
         }

@@ -4,14 +4,14 @@ import numpy as np
 plt.style.use('_mpl-gallery')
 
 chunk_size = -1
-sampling_frequency = 500_000
+sampling_frequency = 16_000_000
 pil_frequency = 100
-bytes_per_sample = 2
+bytes_per_sample = 1
 
 period_samples = sampling_frequency / pil_frequency
 period_bytes = period_samples * bytes_per_sample
 
-with open("default.bin", "rb") as file:
+with open("captureshort.bin", "rb") as file:
     switches = []
     data = file.read(None if chunk_size == -1 else chunk_size)
     #print(data)
@@ -22,7 +22,7 @@ with open("default.bin", "rb") as file:
     for i in range(0, len(data)-bytes_per_sample, bytes_per_sample):
         if data[i+bytes_per_sample] != data[i]:
             switches.append(i)
-    #print(switches)
+    print(switches)
 
     jitter = [0.0] * len(switches)
     for i in range(1, len(switches)):

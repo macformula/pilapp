@@ -1,7 +1,8 @@
-pilapp/target
+target/
 *.csv
 *.bin
 *.jpg
 *.txt
 .direnv
 .envrc
+*.sr

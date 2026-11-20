@@ -33,6 +33,7 @@
               cross.buildPackages.rustfmt
               pkgs.rust-analyzer
               cross.stdenv.cc
+              pkgs.sigrok-cli
             ];
             # where is rust, for rust-analyzer
             RUST_SRC_PATH = "${pkgs.rustPlatform.rustLibSrc}";

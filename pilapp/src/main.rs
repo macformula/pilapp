@@ -56,7 +56,8 @@ where
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    // de-lazify memory
+    // de-lazify memory. This might end up being way overkill, and it probably
+    // makes sense to instead lock down just the logger loop.
     if unsafe { mlockall(MCL_CURRENT | MCL_FUTURE) != 0 } {
         panic!("Could not lock memory")
     }
