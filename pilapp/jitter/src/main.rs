@@ -4,7 +4,7 @@ use std::io::{self, BufWriter, Read, Write};
 use std::sync::mpsc::sync_channel;
 use std::thread;
 
-const CHUNK: usize = 256 * 1024;
+const CHUNK: usize = 1 << 20;
 fn main() -> io::Result<()> {
     let (tx, rx) = sync_channel::<Vec<u8>>(1024);
 
@@ -32,13 +32,20 @@ fn main() -> io::Result<()> {
         "/home/noahjaye/projects/formula/pil/pilapp/jitter/continuous.txt",
     )?);
 
+    //this will have contention issues
+    let mut threads = 0;
+
     //this pattern is awesome
     for chunk in rx {
+        let worker_thread = thread::spawn(move || {
+            threads += 1;
+            println!("{}", threads);
+            threads -= 1;
+        });
         for &b in &chunk {
             if b & 0xFE != 0xFE {
                 continue;
             }
-            let bit = b & 1;
             if first {
                 prev = b;
                 first = false;
