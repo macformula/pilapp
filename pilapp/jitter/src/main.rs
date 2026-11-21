@@ -1,15 +1,32 @@
 // cargo build --release && sudo sigrok-cli -d fx2lafw --config samplerate=16m --samples 24M --channels D0 | cargo run
 use std::fs::File;
 use std::io::{self, BufWriter, Read, Write};
+use std::process::{Command, Stdio};
 use std::sync::mpsc::sync_channel;
 use std::thread;
 
 const CHUNK: usize = 1 << 20;
 fn main() -> io::Result<()> {
+    // sigrok child process
+    let mut child = Command::new("sigrok-cli")
+        .args([
+            "-d",
+            "fx2lafw",
+            "--config",
+            "samplerate=24M",
+            "--samples",
+            "86400M",
+            "--channels",
+            "D0",
+            "-O",
+            "binary",
+        ])
+        .stdout(Stdio::piped())
+        .spawn()?;
     let (tx, rx) = sync_channel::<Vec<u8>>(1024);
 
     let reader_thread = thread::spawn(move || {
-        let mut stdin = io::stdin().lock();
+        let mut stdin = child.stdout.take().expect("no stdout");
         loop {
             let mut chunk = vec![0u8; CHUNK];
             let n = stdin.read(&mut chunk).unwrap();
