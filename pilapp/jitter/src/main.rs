@@ -23,11 +23,14 @@ fn main() -> io::Result<()> {
         }
     });
 
-    let mut switches: Vec<u64> = Vec::new();
     let mut prev: u8 = 0;
     let mut since: u64 = 0;
     let mut total: u64 = 0;
     let mut first = true;
+
+    let mut continuous = BufWriter::new(File::create(
+        "/home/noahjaye/projects/formula/pil/pilapp/jitter/continuous.txt",
+    )?);
 
     //this pattern is awesome
     for chunk in rx {
@@ -37,12 +40,12 @@ fn main() -> io::Result<()> {
             }
             let bit = b & 1;
             if first {
-                prev = b; 
+                prev = b;
                 first = false;
             }
             if b != prev {
-                switches.push(since);
-                // println!("Good");
+                writeln!(continuous, "{}", since);
+                continuous.flush()?;
                 since = 0;
             }
             since += 1;
@@ -51,13 +54,5 @@ fn main() -> io::Result<()> {
     }
 
     reader_thread.join().unwrap();
-
-    let mut out = BufWriter::new(File::create(
-        "/home/noahjaye/projects/formula/pil/pilapp/jitter/out.txt",
-    )?);
-    for s in &switches {
-        writeln!(out, "{}", s)?;
-    }
-    out.flush()?;
     Ok(())
 }
