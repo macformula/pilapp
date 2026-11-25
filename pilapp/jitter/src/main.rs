@@ -8,6 +8,7 @@ use std::thread;
 const CHUNK: usize = 1 << 20;
 fn main() -> io::Result<()> {
     // sigrok child process
+    let samples = std::env::args().nth(1).expect("no samples given");
     let mut child = Command::new("sigrok-cli")
         .args([
             "-d",
@@ -15,7 +16,7 @@ fn main() -> io::Result<()> {
             "--config",
             "samplerate=24M",
             "--samples",
-            "86400M",
+            &samples,
             "--channels",
             "D0",
             "-O",
@@ -49,16 +50,10 @@ fn main() -> io::Result<()> {
         "/home/noahjaye/projects/formula/pil/pilapp/jitter/continuous.txt",
     )?);
 
-    //this will have contention issues
-    let mut threads = 0;
-
+    // a guess, for now
+    let mut switches = Vec::with_capacity(samples.parse::<usize>().unwrap() / 24000);
     //this pattern is awesome
     for chunk in rx {
-        let worker_thread = thread::spawn(move || {
-            threads += 1;
-            println!("{}", threads);
-            threads -= 1;
-        });
         for &b in &chunk {
             if b & 0xFE != 0xFE {
                 continue;
@@ -69,8 +64,12 @@ fn main() -> io::Result<()> {
             }
             if b != prev {
                 writeln!(continuous, "{}", since);
+                switches.push(since);
                 continuous.flush()?;
                 since = 0;
+                if switches.len() > 5 {
+                    println!()
+                }
             }
             since += 1;
             prev = b;
